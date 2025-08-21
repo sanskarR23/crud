@@ -14,7 +14,7 @@ var configuration = builder.Configuration;
 var conn = configuration.GetConnectionString("Default") ?? "";
 
 // register repo
-builder.Services.AddSingleton(new TodoRepository(conn));
+builder.Services.AddSingleton(new EmployeeRepository(conn));
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
@@ -26,47 +26,78 @@ builder.Services.AddCors(options =>
 var app = builder.Build();
 app.UseCors();
 
-// ensure table exists
+// ensure Employees table exists
 using (var connDb = new MySqlConnection(conn))
 {
     await connDb.OpenAsync();
-    var create = @"CREATE TABLE IF NOT EXISTS Todos (
-        Id INT AUTO_INCREMENT PRIMARY KEY,
-        Title VARCHAR(255) NOT NULL,
-        Description TEXT,
-        Completed TINYINT(1) DEFAULT 0
+    var create = @"CREATE TABLE IF NOT EXISTS Employees (
+        emp_id VARCHAR(50) PRIMARY KEY,
+        empname VARCHAR(100) NOT NULL,
+        emp_desk_id VARCHAR(50) NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        image_center VARCHAR(255),
+        image_left VARCHAR(255),
+        image_right VARCHAR(255)
     );";
     await connDb.ExecuteAsync(create);
 }
 
-var repo = app.Services.GetRequiredService<TodoRepository>();
+var repo = app.Services.GetRequiredService<EmployeeRepository>();
 
-app.MapGet("/api/todos", async () => await repo.GetAllAsync());
-
-app.MapGet("/api/todos/{id}", async (int id) =>
+// ✅ Login API
+app.MapPost("/api/employee/login", async (LoginRequest req) =>
 {
-    var t = await repo.GetByIdAsync(id);
-    return t is not null ? Results.Ok(t) : Results.NotFound();
+    Console.WriteLine($"[DEBUG] Login attempt for EmpId = {req.EmpId}, Password = {req.Password}");
+
+    var emp = await repo.GetByIdAsync(req.EmpId);
+
+    if (emp == null)
+    {
+        // Console.WriteLine("[DEBUG] Employee not found in database.");
+        return Results.Unauthorized();
+    }
+    // Console.WriteLine($"[DEBUG] Employee found: EmpId = {emp.EmpId}, Name = {empname}, Password = {emp.Password}");
+
+    if (emp.Password != req.Password)
+    {
+        // Console.WriteLine($"[DEBUG] Password mismatch. Expected = {emp.Password}, Provided = {req.Password}");
+        return Results.Unauthorized();
+    }
+    // Console.WriteLine("[DEBUG] Password matched successfully.");
+
+    return Results.Ok(new { message = "Login successful", employee = emp });
 });
 
-app.MapPost("/api/todos", async (Todo todo) =>
+
+// ✅ CRUD APIs (optional if you need them)
+app.MapGet("/api/employees", async () => await repo.GetAllAsync());
+
+app.MapGet("/api/employees/{id}", async (string id) =>
 {
-    var id = await repo.CreateAsync(todo);
-    todo.Id = id;
-    return Results.Created($"/api/todos/{id}", todo);
+    var emp = await repo.GetByIdAsync(id);
+    return emp is not null ? Results.Ok(emp) : Results.NotFound();
 });
 
-app.MapPut("/api/todos/{id}", async (int id, Todo todo) =>
+app.MapPost("/api/employees", async (Employee employee) =>
 {
-    if (id != todo.Id) return Results.BadRequest();
-    var ok = await repo.UpdateAsync(todo);
+    var ok = await repo.CreateAsync(employee);
+    return ok > 0 ? Results.Created($"/api/employees/{employee.EmpId}", employee) : Results.BadRequest();
+});
+
+app.MapPut("/api/employees/{id}", async (string id, Employee employee) =>
+{
+    if (id != employee.EmpId) return Results.BadRequest();
+    var ok = await repo.UpdateAsync(employee);
     return ok ? Results.NoContent() : Results.NotFound();
 });
 
-app.MapDelete("/api/todos/{id}", async (int id) =>
+app.MapDelete("/api/employees/{id}", async (string id) =>
 {
     var ok = await repo.DeleteAsync(id);
     return ok ? Results.NoContent() : Results.NotFound();
 });
 
 app.Run();
+
+// DTO for login
+public record LoginRequest(string EmpId, string Password);

@@ -1,59 +1,112 @@
-import React, { useEffect, useState } from 'react'
-import axios from 'axios'
+import React, { useState, useRef } from "react";
+import axios from "axios";
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+const API = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 export default function App() {
-  const [todos, setTodos] = useState([])
-  const [title, setTitle] = useState('')
-  const [desc, setDesc] = useState('')
+  const [empId, setEmpId] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loggedIn, setLoggedIn] = useState(false);
+  const videoRef = useRef(null);
+  const streamRef = useRef(null); // to keep track of camera stream
 
-  useEffect(() => { fetchTodos(); }, [])
+  async function handleLogin(e) {
+    e.preventDefault();
+    setError("");
 
-  async function fetchTodos() {
-    const res = await axios.get(`${API}/todos`)
-    setTodos(res.data)
+    try {
+      const res = await axios.post(`${API}/employee/login`, {
+        empId,
+        password,
+      });
+
+      if (res.status === 200) {
+        setLoggedIn(true);
+        startCamera();
+      }
+    } catch (err) {
+      setError("Invalid Employee ID or Password");
+    }
   }
 
-  async function addTodo(e) {
-    e.preventDefault()
-    const res = await axios.post(`${API}/todos`, { title: title, description: desc, completed: false })
-    setTitle('')
-    setDesc('')
-    setTodos(prev => [res.data, ...prev])
+  function startCamera() {
+    navigator.mediaDevices
+      .getUserMedia({ video: true })
+      .then((stream) => {
+        streamRef.current = stream; // store stream
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      })
+      .catch((err) => {
+        console.error("Error accessing camera:", err);
+        setError("Unable to access camera");
+      });
   }
 
-  async function toggle(todo) {
-    await axios.put(`${API}/todos/${todo.id}`, { ...todo, completed: !todo.completed })
-    fetchTodos()
-  }
-
-  async function remove(id) {
-    await axios.delete(`${API}/todos/${id}`)
-    setTodos(prev => prev.filter(t => t.id !== id))
+  function stopCamera() {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
   }
 
   return (
-    <div style={{maxWidth:800, margin:'20px auto', fontFamily:'Segoe UI, sans-serif'}}>
-      <h2>Simple Todo (React + .NET + MySQL)</h2>
-      <form onSubmit={addTodo} style={{marginBottom:20}}>
-        <input required placeholder="Title" value={title} onChange={e=>setTitle(e.target.value)} style={{padding:8, width:'60%'}} />
-        <input placeholder="Description" value={desc} onChange={e=>setDesc(e.target.value)} style={{padding:8, width:'30%', marginLeft:8}} />
-        <button style={{padding:8, marginLeft:8}}>Add</button>
-      </form>
-
-      <ul style={{listStyle:'none', padding:0}}>
-        {todos.map(todo => (
-          <li key={todo.id} style={{padding:10, borderBottom:'1px solid #eee', display:'flex', alignItems:'center'}}>
-            <input type="checkbox" checked={todo.completed} onChange={()=>toggle(todo)} />
-            <div style={{flex:1, marginLeft:12}}>
-              <div style={{fontWeight:600}}>{todo.title}</div>
-              <div style={{color:'#666'}}>{todo.description}</div>
-            </div>
-            <button onClick={()=>remove(todo.id)} style={{marginLeft:8}}>Delete</button>
-          </li>
-        ))}
-      </ul>
+    <div style={{ maxWidth: 500, margin: "50px auto", fontFamily: "Segoe UI" }}>
+      {!loggedIn ? (
+        <form
+          onSubmit={handleLogin}
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 12,
+            padding: 20,
+            border: "1px solid #ddd",
+            borderRadius: 8,
+          }}
+        >
+          <h2>Employee Login</h2>
+          <input
+            required
+            placeholder="Employee ID"
+            value={empId}
+            onChange={(e) => setEmpId(e.target.value)}
+            style={{ padding: 10 }}
+          />
+          <input
+            type="password"
+            required
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            style={{ padding: 10 }}
+          />
+          <button style={{ padding: 10 }}>Login</button>
+          {error && <div style={{ color: "red" }}>{error}</div>}
+        </form>
+      ) : (
+        <div style={{ textAlign: "center" }}>
+          <h2>Welcome, {empId} 🎉</h2>
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            style={{
+              width: "100%",
+              marginTop: 20,
+              borderRadius: 8,
+              border: "2px solid #333",
+            }}
+          ></video>
+          <div style={{ marginTop: 20 }}>
+ 
+          </div>
+        </div>
+      )}
     </div>
-  )
+  );
 }
