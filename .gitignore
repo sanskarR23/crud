@@ -1,0 +1,33 @@
+# Ignore node modules
+node_modules/
+
+# Vite dev server / build
+dist/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Dotnet
+bin/
+obj/
+TestResults/
+*.user
+*.vs/
+**/bin/
+**/obj/
+
+# NuGet
+*.nupkg
+packages/
+.nuget/
+
+# VS Code
+.vscode/
+
+# User secrets
+secrets.json
+
+# Environment files (frontend)
+frontend/.env
