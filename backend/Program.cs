@@ -5,16 +5,20 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using MySqlConnector;
 using Dapper;
-using System.Threading.Tasks;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// configuration
+// get connection string from appsettings.json
 var configuration = builder.Configuration;
 var conn = configuration.GetConnectionString("Default") ?? "";
 
-// register repo
+// register EmployeeRepository as a service
 builder.Services.AddSingleton(new EmployeeRepository(conn));
+
+// add controllers
+builder.Services.AddControllers();
+
+// allow CORS
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
@@ -26,7 +30,7 @@ builder.Services.AddCors(options =>
 var app = builder.Build();
 app.UseCors();
 
-// ensure Employees table exists
+// auto-create Employees table if not exists
 using (var connDb = new MySqlConnection(conn))
 {
     await connDb.OpenAsync();
@@ -42,62 +46,7 @@ using (var connDb = new MySqlConnection(conn))
     await connDb.ExecuteAsync(create);
 }
 
-var repo = app.Services.GetRequiredService<EmployeeRepository>();
-
-// ✅ Login API
-app.MapPost("/api/employee/login", async (LoginRequest req) =>
-{
-    Console.WriteLine($"[DEBUG] Login attempt for EmpId = {req.EmpId}, Password = {req.Password}");
-
-    var emp = await repo.GetByIdAsync(req.EmpId);
-
-    if (emp == null)
-    {
-        // Console.WriteLine("[DEBUG] Employee not found in database.");
-        return Results.Unauthorized();
-    }
-    // Console.WriteLine($"[DEBUG] Employee found: EmpId = {emp.EmpId}, Name = {empname}, Password = {emp.Password}");
-
-    if (emp.Password != req.Password)
-    {
-        // Console.WriteLine($"[DEBUG] Password mismatch. Expected = {emp.Password}, Provided = {req.Password}");
-        return Results.Unauthorized();
-    }
-    // Console.WriteLine("[DEBUG] Password matched successfully.");
-
-    return Results.Ok(new { message = "Login successful", employee = emp });
-});
-
-
-// ✅ CRUD APIs (optional if you need them)
-app.MapGet("/api/employees", async () => await repo.GetAllAsync());
-
-app.MapGet("/api/employees/{id}", async (string id) =>
-{
-    var emp = await repo.GetByIdAsync(id);
-    return emp is not null ? Results.Ok(emp) : Results.NotFound();
-});
-
-app.MapPost("/api/employees", async (Employee employee) =>
-{
-    var ok = await repo.CreateAsync(employee);
-    return ok > 0 ? Results.Created($"/api/employees/{employee.EmpId}", employee) : Results.BadRequest();
-});
-
-app.MapPut("/api/employees/{id}", async (string id, Employee employee) =>
-{
-    if (id != employee.EmpId) return Results.BadRequest();
-    var ok = await repo.UpdateAsync(employee);
-    return ok ? Results.NoContent() : Results.NotFound();
-});
-
-app.MapDelete("/api/employees/{id}", async (string id) =>
-{
-    var ok = await repo.DeleteAsync(id);
-    return ok ? Results.NoContent() : Results.NotFound();
-});
+// map controllers (EmployeeController etc.)
+app.MapControllers();
 
 app.Run();
-
-// DTO for login
-public record LoginRequest(string EmpId, string Password);
