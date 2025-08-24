@@ -91,6 +91,82 @@ namespace Backend.Controllers
             }
         }
 
+        // -------------------------
+        // CRUD endpoints
+        // -------------------------
+
+        // GET api/employee
+        [HttpGet]
+        public async Task<IActionResult> GetAll()
+        {
+            var list = await _repo.GetAllAsync();
+            return Ok(list);
+        }
+
+        // GET api/employee/{id}
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(string id)
+        {
+            var emp = await _repo.GetByIdAsync(id);
+            if (emp == null)
+                return NotFound(new { message = "Employee not found" });
+            return Ok(emp);
+        }
+
+        // POST api/employee
+        [HttpPost]
+        public async Task<IActionResult> Create([FromBody] Employee employee)
+        {
+            if (employee == null || string.IsNullOrWhiteSpace(employee.EmpId))
+                return BadRequest(new { message = "Employee data or EmpId is missing" });
+
+            var existing = await _repo.GetByIdAsync(employee.EmpId);
+            if (existing != null)
+                return Conflict(new { message = "Employee with given EmpId already exists" });
+
+            var inserted = await _repo.CreateAsync(employee);
+            if (inserted <= 0)
+                return StatusCode(500, new { message = "Failed to create employee" });
+
+            return CreatedAtAction(nameof(GetById), new { id = employee.EmpId }, employee);
+        }
+
+        // PUT api/employee/{id}
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(string id, [FromBody] Employee employee)
+        {
+            if (employee == null || id != employee.EmpId)
+                return BadRequest(new { message = "Employee data missing or id mismatch" });
+
+            var existing = await _repo.GetByIdAsync(id);
+            if (existing == null)
+                return NotFound(new { message = "Employee not found" });
+
+            var ok = await _repo.UpdateAsync(employee);
+            if (!ok)
+                return StatusCode(500, new { message = "Failed to update employee" });
+
+            return NoContent();
+        }
+
+        // DELETE api/employee/{id}
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(string id)
+        {
+            var existing = await _repo.GetByIdAsync(id);
+            if (existing == null)
+                return NotFound(new { message = "Employee not found" });
+
+            var ok = await _repo.DeleteAsync(id);
+            if (!ok)
+                return StatusCode(500, new { message = "Failed to delete employee" });
+
+            // Optionally remove images from disk
+            TryDeleteImageFiles(existing.ImageCenter, existing.ImageLeft, existing.ImageRight);
+
+            return NoContent();
+        }
+
         // Helper: decode base64 string and save to disk
         private string SaveBase64Image(string base64, string fileName)
         {
@@ -101,6 +177,21 @@ namespace Backend.Controllers
             string filePath = Path.Combine(_imageFolder, fileName);
             System.IO.File.WriteAllBytes(filePath, bytes);
             return filePath;
+        }
+
+        // Helper: delete image files if they exist
+        private void TryDeleteImageFiles(string? center, string? left, string? right)
+        {
+            void TryDelete(string? file)
+            {
+                if (string.IsNullOrWhiteSpace(file)) return;
+                var p = Path.Combine(_imageFolder, file);
+                try { if (System.IO.File.Exists(p)) System.IO.File.Delete(p); } catch { }
+            }
+
+            TryDelete(center);
+            TryDelete(left);
+            TryDelete(right);
         }
     }
 

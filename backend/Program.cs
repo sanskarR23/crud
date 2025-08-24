@@ -49,4 +49,7 @@ using (var connDb = new MySqlConnection(conn))
 // map controllers (EmployeeController etc.)
 app.MapControllers();
 
+// default root endpoint to avoid 404 when requesting '/'
+app.MapGet("/", () => Results.Ok(new { message = "API running" }));
+
 app.Run();

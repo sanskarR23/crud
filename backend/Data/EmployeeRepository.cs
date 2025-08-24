@@ -20,18 +20,48 @@ namespace Backend.Data
         public async Task<IEnumerable<Employee>> GetAllAsync()
         {
             using var db = CreateConnection();
-            return await db.QueryAsync<Employee>(
-                "SELECT emp_id AS EmpId, empname AS EmpName, emp_desk_id AS EmpDeskId, password AS Password, image_center AS ImageCenter, image_left AS ImageLeft, image_right AS ImageRight FROM Employees ORDER BY emp_id DESC"
-            );
+            var rows = await db.QueryAsync("SELECT emp_id, empname, emp_desk_id, password, image_center, image_left, image_right FROM Employees ORDER BY emp_id DESC");
+            var list = new List<Employee>();
+            foreach (var r in rows)
+            {
+                object? center = r.image_center;
+                object? left = r.image_left;
+                object? right = r.image_right;
+
+                list.Add(new Employee
+                {
+                    EmpId = r.emp_id?.ToString() ?? string.Empty,
+                    EmpName = r.empname?.ToString() ?? string.Empty,
+                    EmpDeskId = r.emp_desk_id?.ToString() ?? string.Empty,
+                    Password = r.password?.ToString() ?? string.Empty,
+                    ImageCenter = center is byte[] cb ? Convert.ToBase64String(cb) : center?.ToString(),
+                    ImageLeft = left is byte[] lb ? Convert.ToBase64String(lb) : left?.ToString(),
+                    ImageRight = right is byte[] rb ? Convert.ToBase64String(rb) : right?.ToString(),
+                });
+            }
+            return list;
         }
 
         public async Task<Employee?> GetByIdAsync(string empId)
         {
             using var db = CreateConnection();
-            return await db.QueryFirstOrDefaultAsync<Employee>(
-                "SELECT emp_id AS EmpId, empname AS EmpName, emp_desk_id AS EmpDeskId, password AS Password, image_center AS ImageCenter, image_left AS ImageLeft, image_right AS ImageRight FROM Employees WHERE emp_id = @EmpId",
-                new { EmpId = empId }
-            );
+            var row = await db.QueryFirstOrDefaultAsync("SELECT emp_id, empname, emp_desk_id, password, image_center, image_left, image_right FROM Employees WHERE emp_id = @EmpId", new { EmpId = empId });
+            if (row == null) return null;
+
+            object? center = row.image_center;
+            object? left = row.image_left;
+            object? right = row.image_right;
+
+            return new Employee
+            {
+                EmpId = row.emp_id?.ToString() ?? string.Empty,
+                EmpName = row.empname?.ToString() ?? string.Empty,
+                EmpDeskId = row.emp_desk_id?.ToString() ?? string.Empty,
+                Password = row.password?.ToString() ?? string.Empty,
+                ImageCenter = center is byte[] cb ? Convert.ToBase64String(cb) : center?.ToString(),
+                ImageLeft = left is byte[] lb ? Convert.ToBase64String(lb) : left?.ToString(),
+                ImageRight = right is byte[] rb ? Convert.ToBase64String(rb) : right?.ToString(),
+            };
         }
 
         public async Task<int> CreateAsync(Employee employee)

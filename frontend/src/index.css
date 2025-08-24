@@ -1,2 +1,86 @@
-body { background:#f7f7f8; margin:0; }
-input, button { font-family:inherit }
+body { background:#f7f7f8; margin:0; font-family: 'Segoe UI', Roboto, Arial; }
+input, button, select { font-family:inherit }
+
+.app-root { max-width:1100px; margin:20px auto; padding:16px; }
+.app-header { text-align:center; margin-bottom:12px; }
+.container { display:grid; grid-template-columns: 1fr 380px; gap:16px; }
+.panel { background:#fff; border-radius:10px; padding:14px; box-shadow:0 6px 18px rgba(0,0,0,0.05); }
+.row { display:flex; gap:8px; align-items:center; }
+.btn { padding:8px 12px; border-radius:6px; background:#2b6ef6; color:#fff; border:0; cursor:pointer; }
+.btn.alt { background:#666; }
+.btn.small { padding:6px 8px; font-size:13px; }
+.error { color:#d9534f; margin-top:8px }
+.video-box { width:100%; border-radius:8px; border:2px solid #222; background:#000 }
+.list { margin-top:12px; }
+.list-item { display:flex; justify-content:space-between; padding:8px; border-radius:8px; background:linear-gradient(180deg,#fff,#fbfbff); margin-bottom:8px; align-items:center; transform:translateY(8px); opacity:0; animation: item-in 360ms forwards ease; }
+.card { box-shadow:0 8px 26px rgba(32,45,80,0.06); transition: transform 220ms ease, box-shadow 220ms ease; }
+.card:hover { transform:translateY(-6px) scale(1.01); box-shadow:0 18px 60px rgba(32,45,80,0.12); }
+.card-left { display:flex; gap:10px; align-items:center }
+.avatar { width:48px; height:48px; border-radius:12px; background:linear-gradient(135deg,#2b6ef6,#7c5cff); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; box-shadow:0 8px 20px rgba(43,110,246,0.12) }
+.avatar.large { width:72px; height:72px; border-radius:14px; font-size:20px }
+.thumb { width:72px; height:72px; object-fit:cover; border-radius:8px; border:1px solid #ddd }
+.thumbs { display:flex; gap:8px; margin-top:8px }
+.muted { color:#666; font-size:13px }
+.select { padding:8px }
+.form input { display:block; width:100%; padding:8px; margin-bottom:8px }
+.capture { margin-top:8px }
+
+.shake { animation: shake 360ms ease }
+@keyframes shake { 0% { transform:translateX(0) } 25% { transform:translateX(-6px) } 50% { transform:translateX(6px) } 75% { transform:translateX(-4px) } 100% { transform:none } }
+
+.create-btn.loading { position:relative; pointer-events:none; opacity:0.9 }
+.create-btn.loading:after { content:''; position:absolute; right:8px; top:50%; width:14px; height:14px; margin-top:-7px; border-radius:50%; border:2px solid rgba(255,255,255,0.5); border-top-color:#fff; animation: spin 700ms linear infinite }
+.create-success { margin-left:10px; color:#2bb673; font-weight:700; animation: pop 420ms both }
+@keyframes pop { from { transform:scale(0.6); opacity:0 } to { transform:none; opacity:1 } }
+
+.uploader { margin-top:8px }
+.file-label { background:#f5f7ff; padding:8px 12px; border-radius:8px; cursor:pointer; display:inline-block }
+.file-input { display:none }
+.thumbs { display:flex; gap:8px; margin-top:8px }
+.uploader .thumb { width:72px; height:72px; border-radius:8px; object-fit:cover; border:2px solid rgba(43,110,246,0.12); box-shadow:0 6px 16px rgba(43,110,246,0.04); transform:translateY(6px); opacity:0; animation: item-in 420ms forwards ease; }
+
+
+/* animations */
+@keyframes item-in { to { transform:translateY(0); opacity:1 } }
+@keyframes slide-down { from { transform:translateY(-8px); opacity:0 } to { transform:translateY(0); opacity:1 } }
+@keyframes fade-in { from { opacity:0; transform:translateY(6px) } to { opacity:1; transform:none } }
+.slide-down { animation: slide-down 420ms ease both }
+.fade { animation: fade-in 420ms ease both }
+.delay-1 { animation-delay:80ms }
+.delay-2 { animation-delay:160ms }
+.delay-3 { animation-delay:240ms }
+.pulse { animation: pulse 1.6s infinite }
+@keyframes pulse { 0% { box-shadow:0 0 0 0 rgba(43,110,246,0.35) } 70% { box-shadow:0 0 0 8px rgba(43,110,246,0) } 100% { box-shadow:0 0 0 0 rgba(43,110,246,0) } }
+
+.app-footer { text-align:center; margin-top:18px; color:#444 }
+
+/* overlay spinner */
+.overlay { position:absolute; left:0; right:0; top:0; bottom:0; display:flex; align-items:center; justify-content:center; background:linear-gradient(180deg, rgba(255,255,255,0.6), rgba(250,250,255,0.2)); border-radius:10px }
+.spinner { width:44px; height:44px; border-radius:50%; border:5px solid rgba(43,110,246,0.15); border-top-color:#2b6ef6; animation: spin 900ms linear infinite }
+@keyframes spin { to { transform:rotate(360deg) } }
+
+/* selected card */
+.selected-card { display:flex; gap:12px; align-items:flex-start; padding:12px; border-radius:12px; background:linear-gradient(180deg,#fff,#fbfcff); box-shadow:0 12px 36px rgba(32,45,80,0.06); transform-origin:center; }
+.flip-in { animation: flip 420ms cubic-bezier(.2,.9,.2,1) both }
+@keyframes flip { from { transform: perspective(700px) rotateX(18deg) scale(0.98); opacity:0 } to { transform:none; opacity:1 } }
+
+.img-grid { display:grid; grid-template-columns: repeat(3,1fr); gap:8px; width:320px }
+.grid-img { width:100%; height:88px; object-fit:cover; border-radius:8px; box-shadow:0 8px 20px rgba(32,45,80,0.06) }
+.img-placeholder { display:flex; align-items:center; justify-content:center; height:88px; background:#f3f5f9; border-radius:8px; color:#888 }
+.img-filename { padding:8px; font-size:12px; color:#444; background:#fafafa; border-radius:8px; height:88px; display:flex; align-items:center; justify-content:center }
+
+/* removing animation for deleted list items */
+.removing { animation: remove-out 420ms forwards ease }
+@keyframes remove-out { to { transform:scale(0.92) translateX(20px); opacity:0; height:0; margin:0; padding:0 } }
+
+/* toast */
+.toast { position:fixed; right:22px; bottom:22px; padding:10px 14px; border-radius:10px; color:#fff; box-shadow:0 10px 30px rgba(32,45,80,0.12); font-weight:700 }
+.toast-success { background:linear-gradient(90deg,#2bb673,#2b9f6f) }
+.toast-error { background:linear-gradient(90deg,#d9534f,#c93737) }
+
+/* login button states */
+.panel .btn.success { background:linear-gradient(90deg,#2bb673,#2b9f6f); box-shadow:0 10px 30px rgba(43,150,110,0.12) }
+.panel.shake { animation: shake 360ms ease }
+
+
+
